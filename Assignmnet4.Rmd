@@ -1,0 +1,342 @@
+---
+title: "Assignment 4"
+author: "Isabelle Radis, Laura Ingulsrud, Lauren Jack"
+date: "11/9/2018"
+output:
+  html_document: default
+  word_document: default
+---
+
+doc.type <- knitr::opts_knit$get('rmarkdown.pandoc.to')
+if (doc.type == "docx") { pander(df) } else { kable(df) }
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+load packages
+```{r,echo = FALSE, message = FALSE}
+library(tidyverse)
+library(kableExtra)
+library(vcdExtra)
+```
+
+Read in .csv
+```{r,echo = FALSE, message = FALSE}
+
+lob_size_abundance <- read.csv("lobster_size_abundance.csv")
+lob_traps<- read.csv("lobster_traps.csv")
+
+```
+ 
+1. Lobster abundance and fishing pressure (2012 - 2017)
+Describe trends in lobster abundance (counts) and fishing pressure (trap buoys) at the five locations from
+2012 - 2017. Ignore transect information - we are only interested in evaluating abundance and pressure on the
+order of SITE. Note: you are not expected to use regression here - just think of ways to clearly
+describe annual totals visually and in text, noting important trends, events and differences.
+scater 
+
+```{r,echo = FALSE, message = FALSE}
+#make simple data frame of lobster abundance
+lob_abundance <- lob_size_abundance %>% 
+  select(YEAR,SITE,COUNT) %>% 
+  filter(COUNT!=0)
+
+#make simple data frame of traps
+lob_traps_simple<-lob_traps %>% 
+  select(YEAR, SITE, TRAPS) %>%
+  filter(SITE!="AHND",
+         SITE!="ABUR",
+         SITE!="AHND to AQUE",
+         SITE!="GOLB")
+```
+
+
+
+```{r,echo = FALSE, message = FALSE}
+# make scatter plot for mean anual abundance by site (2012-2017)
+abundance<- lob_abundance %>% 
+ group_by(SITE,YEAR) %>% 
+ summarize(total_count=round(sum(COUNT)), digits=1)%>% 
+ ggplot(aes(x=YEAR,y= total_count))+
+ geom_point()+
+ facet_wrap(~SITE, scale="free")+
+ xlab("Year")+
+ ylab("Total Count")
+   
+abundance
+
+#make column graph of total abundance by site
+abundance_col<- ggplot(lob_abundance, aes(x=YEAR, y=COUNT))+
+  geom_col()+
+  facet_wrap(~SITE, scale="free")
+
+abundance_col
+
+
+#Make a line graph of total abundance wihtin each site(2012-2017)
+abundance_line<- as.data.frame(lob_abundance) %>% 
+  expand.dft(freq = "COUNT")%>% 
+  count(YEAR, SITE) %>% 
+  ggplot(aes(x=YEAR, y=n))+
+  geom_line(aes(color=SITE))+
+  xlab("Year")+
+  ylab("Lobster Abundance (count)")+
+  ggtitle("Abundance of Lobster from 2012-2017") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
+abundance_line                              
+
+
+  
+```
+
+
+```{r,echo = FALSE, message = FALSE}
+
+# make scatter plot for anual traps set by site (2012-2017)
+traps<- lob_traps_simple %>% 
+ group_by(SITE,YEAR) %>% 
+ summarize(total_count=round(sum(TRAPS)), digits=1)%>% 
+ ggplot(aes(x=YEAR,y= total_count))+
+ geom_point()+
+ facet_wrap(~SITE, scale="free")+
+ xlab("Year")+
+ ylab("Total Traps")+
+scale_y_continuous(expand = c(0,0)) 
+   
+traps
+
+#make column graph of total traps set by site 
+traps_col<- ggplot(lob_traps_simple, aes(x=YEAR, y=TRAPS))+
+  geom_col()+
+  facet_wrap(~SITE, scale="free")
+
+traps_col
+
+
+#Make a line graph of total traps at each site (2012-2017)
+traps_line<- as.data.frame(lob_traps_simple) %>% 
+  expand.dft(freq = "TRAPS") %>% 
+  count(YEAR, SITE) %>% 
+  ggplot(aes(x=YEAR, y=n))+
+  geom_line(aes(color= SITE))+
+  xlab("Year")+
+  ylab("Fishing Pressure (Traps)")+
+  ggtitle("Fishing Pressure from 2012-2017 at Non-MPA Sites") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
+ 
+traps_line 
+```
+
+2. Compare mean lobster size by site in 2017
+Compare mean lobster sizes (carapace length (mm)) across the five sites for lobster observations collected in
+2017. Warning: the size data are not in tidy format. There are rows that contain size information for multiple
+lobsters observed (e.g., if the researcher saw 3 lobsters all with carapace length ~ 60 mm, then they will have a single row where COUNT = 3 and SIZE = 60). You’ll want to get this into case format - where each lobster
+has its own row - before doing statistical analyses. There are many ways to do this. One hint: function
+expand.dft in the vcdExtra package (it doesn’t like tibbles, so you might need to coerce to data.frame first).
+
+Anova boxplot and error bars
+
+```{r,echo = FALSE, message = FALSE}
+
+
+# put lobster size data into case format
+lob_abun_simple<-expand.dft(lob_size_abundance, freq="COUNT")
+
+#sumarize abundance data
+lab_simple<-lob_abun_simple %>% 
+  select(SITE, SIZE) %>% 
+  group_by(SITE) %>% 
+  summarize(Mean= mean(SIZE),
+           SD= sd(SIZE),
+           Median= median(SIZE),
+           Maximum= max(SIZE),
+           SampleSize= length(SIZE))
+           
+lab_simple
+# make collumn graph of mean lobster sizes  I THINK THIS IS VERY WRONG...TAKES TEH MEAN OF SIZES from ALL YEARS 
+lab_col<-ggplot(lab_simple, aes(x= SITE, y = Mean))+
+  geom_col(aes(fill= "pink"), color="white") +
+  geom_errorbar(aes(ymin= Mean-SD, ymax= Mean+SD, width=.3))+
+  xlab("SITE")+
+  ylab("Mean size(mm)") +
+  ggtitle("Mean Lobster Size by Site in 2017") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_blank(),
+        legend.position= "none",
+        axis.line = element_line(colour = "black"))+ 
+  scale_y_continuous(expand = c(0,0)) +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  
+lab_col
+```
+
+3. Changes in lobster size at MPA and non-MPA sites (comparing only 2012 and 2017 sizes)
+From the data description (http://sbc.lternet.edu/cgi-bin/showDataset.cgi?docid=knb-lter-sbc.77):
+“Data on abundance, size and fishing pressure of California spiny lobster (Panulirus interruptus)
+are collected along the mainland coast of the Santa Barbara Channel. Spiny lobsters are an
+important predator in giant kelp forests off southern California. Two SBC LTER study reefs are
+located in or near the California Fish and Game Network of Marine Protected Areas (MPA), Naples
+and Isla Vista, both established as MPAs on 2012-01-01. MPAs provide a unique opportunity to
+investigate the effects of fishing on kelp forest community dynamics. Sampling began in 2012 and
+is ongoing.”
+At Isla Vista and Naples Reef, the two protected MPA sites (with zero fishing pressure), how do lobster sizes
+in 2012 and 2017 compare? At the non-MPA sites?
+
+```{r,echo = FALSE, message = FALSE}
+
+ lab_simple_12vs17<-lob_abun_simple %>% 
+  select(YEAR, SITE, SIZE) %>% 
+  filter(YEAR=="2017"| YEAR== "2012") %>% 
+  group_by(SITE,YEAR) %>% 
+  summarize(Mean= mean(SIZE),
+           SD= sd(SIZE),
+           Median= median(SIZE),
+           Maximum= max(SIZE),
+           SampleSize= length(SIZE))
+
+lab_col_12vs17 <- ggplot(lab_simple_12vs17, aes(x= SITE, y = Mean, group= YEAR))+
+  geom_col(aes(fill= YEAR), color="white",
+           position="dodge") +
+  xlab("SITE")+
+  ylab("Mean size(mm)") +
+  ggtitle("Mean Lobster Size by Site in 2012 and 2017") +
+ scale_fill_gradient(c("gray70","gray40")) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_blank(),
+        legend.position= "none",
+        axis.line = element_line(colour = "black"))+ 
+  scale_y_continuous(expand = c(0,0)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+lab_col_12vs17
+# add leggend with years...
+# when I add the manual color, it says "continuous value supplied to discrete scale"
+
+```
+
+```{r,echo = FALSE, message = FALSE}
+
+#Preform 5 two sample t-test to test if lobster sizes differ significantly between 2012 and 2016(one t test per site)
+
+#H0: means are equal (differnce in means = 0)
+#Ha: means are NOT equal (difference in means is NOT 0)
+
+
+NAPL_abun_12<- lob_size_abundance %>% 
+  filter(SITE=="NAPL", YEAR== "2012") %>% 
+  pull("SIZE")
+NAPL_abun_12
+
+NAPL_abun_17<- lob_size_abundance %>% 
+  filter(SITE=="NAPL", YEAR== "2017") %>% 
+  pull("SIZE")
+NAPL_abun_17
+
+t_test<- t.test(NAPL_abun_17, NAPL_abun_12)
+t_test
+
+# p value is 2.842e^-14
+# thus, there is a significant diference between the two means
+
+# maybe a man whiney u
+IVEE_abun_12<- lob_size_abundance %>% 
+  filter(SITE=="IVEE", YEAR== "2012") %>% 
+  pull("SIZE")
+IVEE_abun_12
+
+IVEE_abun_17<- lob_size_abundance %>% 
+  filter(SITE=="IVEE", YEAR== "2017") %>% 
+  pull("SIZE")
+IVEE_abun_17
+
+t_test<- t.test(IVEE_abun_17, IVEE_abun_12)
+t_test 
+# p value is 5.485e-08
+# thus, there is a significant diference between the two means
+
+
+
+AQUE_abun_12<- lob_size_abundance %>% 
+  filter(SITE=="AQUE", YEAR== "2012") %>% 
+  pull("SIZE")
+AQUE_abun_12
+
+AQUE_abun_17<- lob_size_abundance %>% 
+  filter(SITE=="AQUE", YEAR== "2017") %>% 
+  pull("SIZE")
+AQUE_abun_17
+
+t_test<- t.test(AQUE_abun_17, AQUE_abun_12)
+t_test 
+# p value = 0.7803
+# thus, there is not a significant diference between the two means
+
+CARP_abun_12<- lob_size_abundance %>% 
+  filter(SITE=="CARP", YEAR== "2012") %>% 
+  pull("SIZE")
+CARP_abun_12
+
+CARP_abun_17<- lob_size_abundance %>% 
+  filter(SITE=="CARP", YEAR== "2017") %>% 
+  pull("SIZE")
+CARP_abun_17
+
+t_test<- t.test(CARP_abun_17, CARP_abun_12)
+t_test 
+# p value = 4.158e^-16
+# thus, there is a significant diference between the two means
+
+MOHK_abun_12<- lob_size_abundance %>% 
+  filter(SITE=="MOHK", YEAR== "2012") %>% 
+  pull("SIZE")
+MOHK_abun_12
+
+MOHK_abun_17<- lob_size_abundance %>% 
+  filter(SITE=="MOHK", YEAR== "2017") %>% 
+  pull("SIZE")
+MOHK_abun_17
+
+MOHK_ftest<-var.test(MOHK_abun_17, MOHK_abun_12)
+MOHK_ftest
+
+t_test<- t.test(MOHK_abun_17, MOHK_abun_12, var.equal=TRUE)
+t_test 
+
+cohens.d <-
+  
+  
+  
+# p value = 0.1076
+# thus, there is not a significant diference between the two means
+
+
+#.. do this for all or do you lump NAPL and IVEE together to then say MPA sites have a significant difference (or dont) in lobster size from 2012 to 2017 
+# then lump Non-MPA sites together and say there is (or is not) a significant difference in lobster size from 2012 to 2017
+
+
+```
+
+
+4. Proportions of “legal” lobsters at the 5 sites in 2017
+The legal minimum carapace size for lobster is 82.6 mm. What proportion of observed lobsters at each site
+are above the legal minimum? Does that proportion differ significantly across the 5 sites? Note: We’ll be
+doing chi-square in labs next week, or go ahead with maximum resourcefulness and check out the chisq.test()
+function on your own!
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
