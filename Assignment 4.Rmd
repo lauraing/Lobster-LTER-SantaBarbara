@@ -128,6 +128,7 @@ lob_abun_simple<-expand.dft(lob_size_abundance, freq="COUNT")
 
 #sumarize abundance data
 lab_simple<-lob_abun_simple %>% 
+  filter(YEAR == 2017) %>% 
   select(SITE, SIZE) %>% 
   group_by(SITE) %>% 
   summarize(Mean= mean(SIZE),
@@ -137,6 +138,7 @@ lab_simple<-lob_abun_simple %>%
            SampleSize= length(SIZE))
            
 lab_simple
+
 # make collumn graph of mean lobster sizes  I THINK THIS IS VERY WRONG...TAKES TEH MEAN OF SIZES from ALL YEARS 
 lab_col<-ggplot(lab_simple, aes(x= SITE, y = Mean))+
   geom_col(aes(fill= "pink"), color="white") +
