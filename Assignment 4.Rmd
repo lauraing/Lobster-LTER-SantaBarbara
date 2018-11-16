@@ -168,6 +168,36 @@ theme(axis.text.x = element_text(angle = 45, hjust = 1))
 lab_col
 ```
 
+
+```{r}
+#filter dataset for just 2017 values
+Lob_2017_simple <- lob_abun_simple %>% 
+  filter(YEAR == 2017)
+
+```
+
+
+```{r}
+#Anova of 2017 Lobster size Data across all 5 sites
+anov_lobby <- aov(SIZE ~ SITE, data = Lob_2017_simple)
+anov_sum <- summary(anov_lobby)
+
+anov_sum
+
+```
+
+
+```{r}
+lobby_boxplot <- ggplot(Lob_2017_simple, aes(x= SITE, y= SIZE)) +
+  geom_boxplot(aes(fill = SITE, colour = SITE), alpha = 0.5) +
+  theme_classic() +
+  labs(x= "Site", y= "Lobster Size" ) +
+  theme(legend.position = "NONE")
+
+lobby_boxplot
+
+```
+
 3. Changes in lobster size at MPA and non-MPA sites (comparing only 2012 and 2017 sizes)
 From the data description (http://sbc.lternet.edu/cgi-bin/showDataset.cgi?docid=knb-lter-sbc.77):
 “Data on abundance, size and fishing pressure of California spiny lobster (Panulirus interruptus)
