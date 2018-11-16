@@ -47,7 +47,7 @@ lob_traps_simple <- lob_traps %>% # Create simple data frame of lobster traps fr
          SITE!="AHND to AQUE",
          SITE!="GOLB") # Filter out all sites except the 5 LTER locations: AQUE, NAPL, MOHK, IVEE, and CARP
 
-# Make scatter plot for mean annual lobster abundance by site (2012-2017)
+# Make scatter plot for annual lobster abundance by site (2012-2017)
 abundance <- lob_abundance %>% 
  group_by(SITE,YEAR) %>% 
  summarize(total_count=round(sum(COUNT)), digits=1)%>% 
@@ -114,9 +114,21 @@ traps_line<- as.data.frame(lob_traps_simple) %>%
         panel.grid.minor = element_blank(), panel.background = element_blank(),
         axis.line = element_line(colour = "black"))
  
-traps_line # CAll "traps_line" line graph
+traps_line # Call "traps_line" line graph
 
 ```
+
+Fishing Pressure from 2012-2017 at Non-MPA Sites:
+
+
+Abundance of Lobster from 2012-2017:
+AQUE stays relatively consistent
+CARP starts increasing after 2015, with a big spike between 2016 and 2017
+IVEE increases from 2012 to 2015, decreases from 2015 and 2016, and increases again to 2017
+MOHK spikes between 2014 and 2015, then steadily decreases to 2017
+NAPL increases steadily between 2012 and 2015, then decreases steadily to 2017
+IVEE, MOHK, and NAPL all increase in abundance between 2013 and 2015, but then all decrease to 2016. Out of these 3 sites, only IVEE rapidly increases in abundance from 2016 to 2017; the other 2 sites (MOHK & NAPL) decrease slightly.
+CARP and AQUE both don't have large changes in abundance from 2012 to 2015; after 2015, AQUE abundance decreases a little, and CARP increases, with a large increase from 2016 to 2017.
 
 ```{r,echo = FALSE, message = FALSE}
 
@@ -139,7 +151,7 @@ lab_simple<-lob_abun_simple %>%
            
 lab_simple
 
-# make collumn graph of mean lobster sizes  I THINK THIS IS VERY WRONG...TAKES TEH MEAN OF SIZES from ALL YEARS 
+# make column graph of mean lobster sizes 
 lab_col<-ggplot(lab_simple, aes(x= SITE, y = Mean))+
   geom_col(aes(fill= "pink"), color="white") +
   geom_errorbar(aes(ymin= Mean-SD, ymax= Mean+SD, width=.3))+
