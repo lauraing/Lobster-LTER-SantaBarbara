@@ -14,48 +14,40 @@ if (doc.type == "docx") { pander(df) } else { kable(df) }
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-load packages
 ```{r,echo = FALSE, message = FALSE}
+
+# Load necessary packages
 library(tidyverse)
 library(kableExtra)
 library(vcdExtra)
+
 ```
 
-Read in .csv
 ```{r,echo = FALSE, message = FALSE}
 
+# Read in .csv files
 lob_size_abundance <- read.csv("lobster_size_abundance.csv")
 lob_traps<- read.csv("lobster_traps.csv")
 
 ```
- 
-1. Lobster abundance and fishing pressure (2012 - 2017)
-Describe trends in lobster abundance (counts) and fishing pressure (trap buoys) at the five locations from
-2012 - 2017. Ignore transect information - we are only interested in evaluating abundance and pressure on the
-order of SITE. Note: you are not expected to use regression here - just think of ways to clearly
-describe annual totals visually and in text, noting important trends, events and differences.
-scater 
 
 ```{r,echo = FALSE, message = FALSE}
-#make simple data frame of lobster abundance
-lob_abundance <- lob_size_abundance %>% 
-  select(YEAR,SITE,COUNT) %>% 
-  filter(COUNT!=0)
 
-#make simple data frame of traps
-lob_traps_simple<-lob_traps %>% 
-  select(YEAR, SITE, TRAPS) %>%
+# Problem 1. Lobster abundance and fishing pressure (2012 - 2017). Describe trends in lobster abundance (counts) and fishing pressure (trap buoys) at the five locations from 2012 - 2017. Ignore transect information - we are only interested in evaluating abundance and pressure on the order of SITE. Note: you are not expected to use regression here - just think of ways to clearly describe annual totals visually and in text, noting important trends, events, and differences.
+
+lob_abundance <- lob_size_abundance %>% # Create simple data frame of lobster abundance from lob_size_abundance data frame
+  select(YEAR, SITE, COUNT) %>% # Select only YEAR, SITE, and COUNT columns
+  filter(COUNT!=0) # Filter out all values of 0 in COUNT column
+
+lob_traps_simple <- lob_traps %>% # Create simple data frame of lobster traps from lob_traps data frame
+  select(YEAR, SITE, TRAPS) %>% # Select only YEAR, SITE, and TRAPS columns
   filter(SITE!="AHND",
          SITE!="ABUR",
          SITE!="AHND to AQUE",
-         SITE!="GOLB")
-```
+         SITE!="GOLB") # Filter out all sites except the 5 LTER locations: AQUE, NAPL, MOHK, IVEE, and CARP
 
-
-
-```{r,echo = FALSE, message = FALSE}
-# make scatter plot for mean anual abundance by site (2012-2017)
-abundance<- lob_abundance %>% 
+# Make scatter plot for mean annual lobster abundance by site (2012-2017)
+abundance <- lob_abundance %>% 
  group_by(SITE,YEAR) %>% 
  summarize(total_count=round(sum(COUNT)), digits=1)%>% 
  ggplot(aes(x=YEAR,y= total_count))+
@@ -66,15 +58,14 @@ abundance<- lob_abundance %>%
    
 abundance
 
-#make column graph of total abundance by site
+# Make a column graph of total lobster abundance by site
 abundance_col<- ggplot(lob_abundance, aes(x=YEAR, y=COUNT))+
   geom_col()+
   facet_wrap(~SITE, scale="free")
 
-abundance_col
+abundance_col # Call out graph
 
-
-#Make a line graph of total abundance wihtin each site(2012-2017)
+# Make a line graph of total lobster abundance within each site (2012-2017)
 abundance_line<- as.data.frame(lob_abundance) %>% 
   expand.dft(freq = "COUNT")%>% 
   count(YEAR, SITE) %>% 
@@ -86,16 +77,10 @@ abundance_line<- as.data.frame(lob_abundance) %>%
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_blank(),
         axis.line = element_line(colour = "black"))
-abundance_line                              
 
+abundance_line # Call out graph
 
-  
-```
-
-
-```{r,echo = FALSE, message = FALSE}
-
-# make scatter plot for anual traps set by site (2012-2017)
+# Make scatter plot for anual traps set by site (2012-2017)
 traps<- lob_traps_simple %>% 
  group_by(SITE,YEAR) %>% 
  summarize(total_count=round(sum(TRAPS)), digits=1)%>% 
@@ -108,15 +93,14 @@ scale_y_continuous(expand = c(0,0))
    
 traps
 
-#make column graph of total traps set by site 
+# Make a column graph of total traps set by site 
 traps_col<- ggplot(lob_traps_simple, aes(x=YEAR, y=TRAPS))+
   geom_col()+
   facet_wrap(~SITE, scale="free")
 
 traps_col
 
-
-#Make a line graph of total traps at each site (2012-2017)
+# Make a line graph of total traps at each site (2012-2017)
 traps_line<- as.data.frame(lob_traps_simple) %>% 
   expand.dft(freq = "TRAPS") %>% 
   count(YEAR, SITE) %>% 
@@ -130,14 +114,11 @@ traps_line<- as.data.frame(lob_traps_simple) %>%
         axis.line = element_line(colour = "black"))
  
 traps_line 
+
 ```
 
 2. Compare mean lobster size by site in 2017
-Compare mean lobster sizes (carapace length (mm)) across the five sites for lobster observations collected in
-2017. Warning: the size data are not in tidy format. There are rows that contain size information for multiple
-lobsters observed (e.g., if the researcher saw 3 lobsters all with carapace length ~ 60 mm, then they will have a single row where COUNT = 3 and SIZE = 60). You’ll want to get this into case format - where each lobster
-has its own row - before doing statistical analyses. There are many ways to do this. One hint: function
-expand.dft in the vcdExtra package (it doesn’t like tibbles, so you might need to coerce to data.frame first).
+Compare mean lobster sizes (carapace length (mm)) across the five sites for lobster observations collected in 2017. Warning: the size data are not in tidy format. There are rows that contain size information for multiple lobsters observed (e.g., if the researcher saw 3 lobsters all with carapace length ~ 60 mm, then they will have a single row where COUNT = 3 and SIZE = 60). You’ll want to get this into case format - where each lobster has its own row - before doing statistical analyses. There are many ways to do this. One hint: function expand.dft in the vcdExtra package (it doesn’t like tibbles, so you might need to coerce to data.frame first).
 
 Anova boxplot and error bars
 
@@ -307,7 +288,7 @@ MOHK_ftest
 t_test<- t.test(MOHK_abun_17, MOHK_abun_12, var.equal=TRUE)
 t_test 
 
-cohens.d <-
+cohens.d
   
   
   
